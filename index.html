@@ -4,39 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sound Kitten</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      canvas {
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
     <script src="game.js"></script>
-    <script src="main.js"></script>
-    <script>
-      window.onload = function () {
-        const config = {
-          type: Phaser.AUTO,
-          width: 800,
-          height: 600,
-          scene: gameScene,
-          canvas: document.getElementById("gameCanvas"),
-          contextCreation: { willReadFrequently: true },
-        };
-        const game = new Phaser.Game(config);
-      };
-    </script>
   </head>
   <body>
-    <h1>Sound Kitten</h1>
-    <div id="gameContainer">
-      <canvas id="gameCanvas"></canvas>
-    </div>
-    <div>
-      <label for="thresholdSlider">Threshold: </label>
-      <input
-        type="range"
-        id="thresholdSlider"
-        min="0.1"
-        max="1"
-        step="0.1"
-        value="0.5"
-      />
-      <span id="thresholdValue">0.5</span>
-    </div>
+    <div id="gameContainer"></div>
   </body>
 </html>

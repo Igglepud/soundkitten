@@ -5,7 +5,9 @@ class gameScene extends Phaser.Scene {
     this.threshold = 0.5; // Initialize threshold
   }
 
-  preload() {}
+  preload() {
+    // Remove plugin loading
+  }
 
   create() {
     this.micVolumeText = this.add.text(10, 10, "Mic Volume: 0", {
@@ -13,8 +15,58 @@ class gameScene extends Phaser.Scene {
       fill: "#ffffff",
     });
 
+    this.createCustomSlider();
     this.initMicrophone();
-    this.initSlider();
+  }
+
+  createCustomSlider() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    // Add threshold text
+    this.thresholdText = this.add
+      .text(width / 2, height - 60, "Threshold: 0.5", {
+        font: "16px Arial",
+        fill: "#ffffff",
+      })
+      .setOrigin(0.5);
+
+    // Create slider track
+    const trackWidth = 200;
+    const trackHeight = 4;
+    this.sliderTrack = this.add.rectangle(
+      width / 2,
+      height - 30,
+      trackWidth,
+      trackHeight,
+      0x333333
+    );
+
+    // Create slider thumb
+    this.sliderThumb = this.add.circle(width / 2, height - 30, 8, 0xcccccc);
+    this.sliderThumb.setInteractive({ draggable: true });
+
+    // Store slider properties
+    this.sliderStartX = this.sliderTrack.x - trackWidth / 2;
+    this.sliderEndX = this.sliderTrack.x + trackWidth / 2;
+
+    // Add drag events
+    this.sliderThumb.on("drag", (pointer, dragX) => {
+      const x = Phaser.Math.Clamp(dragX, this.sliderStartX, this.sliderEndX);
+      this.sliderThumb.x = x;
+
+      // Calculate and update threshold value (0.1 to 1.0)
+      const percent =
+        (x - this.sliderStartX) / (this.sliderEndX - this.sliderStartX);
+      this.threshold = 0.1 + percent * 0.9;
+      this.thresholdText.setText(`Threshold: ${this.threshold.toFixed(2)}`);
+    });
+
+    // Set initial position (0.5)
+    const initialX =
+      this.sliderStartX +
+      ((0.5 - 0.1) / 0.9) * (this.sliderEndX - this.sliderStartX);
+    this.sliderThumb.x = initialX;
   }
 
   update() {
@@ -57,14 +109,7 @@ class gameScene extends Phaser.Scene {
     console.log("Mic Volume: ", this.micVolume);
   }
 
-  initSlider() {
-    const slider = document.getElementById("thresholdSlider");
-    const thresholdValue = document.getElementById("thresholdValue");
-    slider.addEventListener("input", (event) => {
-      this.threshold = parseFloat(event.target.value);
-      thresholdValue.textContent = event.target.value;
-    });
-  }
+  // Remove initSlider() method since we're not using DOM elements anymore
 
   shutdown() {
     if (this.microphoneStream) {
@@ -84,9 +129,13 @@ class gameScene extends Phaser.Scene {
 
 const config = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: window.innerWidth,
+  height: window.innerHeight,
   scene: gameScene,
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
 };
 
 const game = new Phaser.Game(config);
