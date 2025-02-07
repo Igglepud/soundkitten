@@ -2,6 +2,7 @@ class gameScene extends Phaser.Scene {
   constructor() {
     super({ key: "gameScene" });
     this.micVolume = 0; // Initialize micVolume
+    this.threshold = 0.5; // Initialize threshold
   }
 
   preload() {}
@@ -13,15 +14,16 @@ class gameScene extends Phaser.Scene {
     });
 
     this.initMicrophone();
+    this.initSlider();
   }
 
-    update() {
-        this.micVolumeText.setText("Mic Volume: " + this.micVolume.toFixed(2));
-        if (this.micVolume > 0.5) {
-            console.log("Mic is loud!");
-            alert('mic is too loud')
-        }
+  update() {
+    this.micVolumeText.setText("Mic Volume: " + this.micVolume.toFixed(2));
+    if (this.micVolume > this.threshold) {
+      console.log("Mic is loud!");
+      alert("mic is too loud");
     }
+  }
 
   initMicrophone() {
     navigator.mediaDevices
@@ -52,6 +54,15 @@ class gameScene extends Phaser.Scene {
   processMicrophoneBuffer(volume) {
     this.micVolume = volume;
     console.log("Mic Volume: ", this.micVolume);
+  }
+
+  initSlider() {
+    const slider = document.getElementById("thresholdSlider");
+    const thresholdValue = document.getElementById("thresholdValue");
+    slider.addEventListener("input", (event) => {
+      this.threshold = parseFloat(event.target.value);
+      thresholdValue.textContent = event.target.value;
+    });
   }
 }
 
