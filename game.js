@@ -2,7 +2,7 @@ class gameScene extends Phaser.Scene {
   constructor() {
     super({ key: "gameScene" });
     this.micVolume = 0; // Initialize micVolume
-    this.threshold = 0.5; // Initialize threshold
+    this.threshold = 0.8; // Initialize threshold
     this.eyeOpenAmount = 0; // Track eye state
     this.lastStateChange = 0; // Track when we last changed states
     this.currentState = "closed"; // Track current state
@@ -15,6 +15,9 @@ class gameScene extends Phaser.Scene {
   create() {
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
+
+    // Initialize tone generator
+    this.toneGenerator = new ToneGenerator();
 
     // Create face in center of screen
     this.createFace(width / 2, height / 2);
@@ -133,17 +136,18 @@ class gameScene extends Phaser.Scene {
     // This allows for more fluid transitions
     if (this.micVolume > this.threshold) {
       targetEyeOpen = 1;
-      this.sleepingZ.setVisible(false);
     } else if (this.micVolume > halfThreshold) {
       // Map the value between halfThreshold and threshold to 0.5-1.0
       const range = this.threshold - halfThreshold;
       const position = this.micVolume - halfThreshold;
       targetEyeOpen = 0.5 + (position / range) * 0.5;
-      this.sleepingZ.setVisible(false);
+      this.sleepingZ.setText('Shut up!!!');
+      this.toneGenerator.playTone(14000, 1000, 1, 'sine');
     } else {
       // Map the value between 0 and halfThreshold to 0-0.5
       targetEyeOpen = (this.micVolume / halfThreshold) * 0.5;
-      this.sleepingZ.setVisible(targetEyeOpen < 0.1);
+      this.sleepingZ.setText('z z z');
+     //this.sleepingZ.setVisible(targetEyeOpen < 0.1);
     }
 
     // Smooth animation
@@ -208,17 +212,23 @@ class gameScene extends Phaser.Scene {
       this.audioContext.close();
       this.audioContext = null;
     }
+    if (this.toneGenerator) {
+      this.toneGenerator.destroy();
+      this.toneGenerator = null;
+    }
   }
 }
 
 const config = {
   type: Phaser.AUTO,
-  width: window.innerWidth,
-  height: window.innerHeight,
+  width: 800,
+  height: 600,
   scene: gameScene,
   scale: {
-    mode: Phaser.Scale.RESIZE,
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: 800,
+    height: 600
   },
 };
 
