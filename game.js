@@ -18,6 +18,7 @@ class gameScene extends Phaser.Scene {
 
     // Initialize tone generator
     this.toneGenerator = new ToneGenerator();
+    this.toneGenerator.setScene(this);
 
     // Create face in center of screen
     this.createFace(width / 2, height / 2);
