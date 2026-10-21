@@ -6,6 +6,8 @@ class gameScene extends Phaser.Scene {
     this.eyeOpenAmount = 0; // Track eye state
     this.lastStateChange = 0; // Track when we last changed states
     this.currentState = "closed"; // Track current state
+    this.toneActive = false; // True while the tone plays
+    this.toneCooldown = false; // True while tone plays plus tail; mic is ignored
   }
 
   preload() {
@@ -18,7 +20,6 @@ class gameScene extends Phaser.Scene {
 
     // Initialize tone generator
     this.toneGenerator = new ToneGenerator();
-    this.toneGenerator.setScene(this);
 
     // Create face in center of screen
     this.createFace(width / 2, height / 2);
@@ -129,21 +130,41 @@ class gameScene extends Phaser.Scene {
     }
   }
 
+  startTone() {
+    if (this.toneActive || this.toneCooldown) return;
+    this.toneGenerator.playTone(12000, 1000, 1, 'sine');
+    this.toneActive = true;
+    this.toneCooldown = true;
+    // Face goes back to sleep when the tone ends
+    this.time.delayedCall(1000, () => {
+      this.toneActive = false;
+    });
+    // Mic stays ignored a bit longer so the tone's tail can't re-trigger it
+    this.time.delayedCall(1500, () => {
+      this.toneCooldown = false;
+    });
+  }
+
   updateFace() {
     const halfThreshold = this.threshold / 2;
     let targetEyeOpen = 0;
 
     // Directly use volume to determine eye state without state management
     // This allows for more fluid transitions
-    if (this.micVolume > this.threshold) {
+    if (this.toneActive) {
+      // Fully awake while the tone plays
       targetEyeOpen = 1;
+      this.sleepingZ.setText('Shut up!!!');
+    } else if (this.micVolume > this.threshold) {
+      targetEyeOpen = 1;
+      this.sleepingZ.setText('Shut up!!!');
+      this.startTone();
     } else if (this.micVolume > halfThreshold) {
       // Map the value between halfThreshold and threshold to 0.5-1.0
       const range = this.threshold - halfThreshold;
       const position = this.micVolume - halfThreshold;
       targetEyeOpen = 0.5 + (position / range) * 0.5;
-      this.sleepingZ.setText('Shut up!!!');
-      this.toneGenerator.playTone(14000, 1000, 1, 'sine');
+      this.sleepingZ.setText('z z z');
     } else {
       // Map the value between 0 and halfThreshold to 0-0.5
       targetEyeOpen = (this.micVolume / halfThreshold) * 0.5;
@@ -168,7 +189,13 @@ class gameScene extends Phaser.Scene {
 
   initMicrophone() {
     navigator.mediaDevices
-      .getUserMedia({ audio: true })
+      .getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: false,
+        },
+      })
       .then((stream) => this.startMicrophone(stream))
       .catch((err) => console.error("getUserMedia error:", err));
   }
@@ -194,7 +221,7 @@ class gameScene extends Phaser.Scene {
   }
 
   processMicrophoneBuffer(volume) {
-    this.micVolume = volume;
+    this.micVolume = this.toneActive || this.toneCooldown ? 0 : volume;
     console.log("Mic Volume: ", this.micVolume);
   }
 
